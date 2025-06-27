@@ -1,0 +1,301 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
+
+:root {
+    --red: #d92d20;
+    --green: #53a623;
+    --blue: #006cbf;
+    --yellow: #f4c000;
+    --black: #333333;
+    --game-bg: #1e77be;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    height: 100vh;
+    background-color: var(--game-bg);
+    color: white;
+    overflow: hidden;
+}
+
+.hidden {
+    display: none !important;
+}
+
+
+
+#welcome-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100vh;
+    position: relative;
+}
+
+.welcome-content h1 {
+    font-size: 8em;
+    text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.group-info {
+    text-align: center;
+    margin-top: -20px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.card-stack {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 400px;
+    z-index: -1;
+}
+
+.welcome-card {
+    width: 120px;
+    height: 180px;
+    border: 2px solid white;
+    border-radius: 10px;
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.7);
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3em;
+    font-weight: bold;
+}
+
+.card-red-4 { background-color: var(--red); transform: translate(20px, 20px) rotate(10deg); }
+.card-green-plus2 { background-color: var(--green); transform: translate(40px, -30px) rotate(-15deg); }
+.card-yellow-9 { background-color: var(--yellow); transform: translate(-10px, -10px) rotate(5deg); }
+.card-blue-wild { background: var(--blue); transform: translate(-30px, 30px) rotate(-20deg); }
+
+.welcome-button {
+    background-color: var(--black);
+    color: white;
+    border: 2px solid white;
+    padding: 15px 40px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-top: 40px;
+    transition: all 0.2s ease-in-out;
+}
+
+.welcome-button:hover {
+    background-color: #555;
+    transform: scale(1.05);
+}
+
+
+
+#game-board {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    height: 100vh;
+    padding: 20px;
+    position: relative;
+}
+
+.player-area {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.player-info {
+    font-size: 1.5em;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px #000;
+}
+
+.hand {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding: 10px;
+    min-height: 180px;
+}
+
+.center-area {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+}
+
+
+.card-pile {
+    width: 110px;
+    height: 160px;
+    border-radius: 10px;
+    border: 3px solid rgba(0, 0, 0, 0.5);
+}
+
+#deck {
+    cursor: pointer;
+    background: transparent;
+    border: none;
+}
+
+#discard-pile {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+#color-indicator {
+    width: 40px;
+    height: 40px;
+    border: 3px solid white;
+    transform: rotate(45deg);
+    transition: background-color 0.4s;
+    position: absolute;
+    right: calc(50% - 150px);
+}
+
+.card {
+    width: 110px;
+    height: 160px;
+    border-radius: 10px;
+    border: 4px solid white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3em;
+    font-weight: bold;
+    position: relative;
+    transition: all 0.2s ease-out;
+    color: white;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+.card.back {
+    background: url('assets/images/reverso.png') no-repeat center center / cover;
+    border-color: white;
+}
+
+.card.red { background-color: var(--red); }
+.card.green { background-color: var(--green); }
+.card.blue { background-color: var(--blue); }
+.card.yellow { background-color: var(--yellow); }
+.card.wild { background: radial-gradient(circle, #555, #333); border-color: #eee; }
+
+
+
+.hand .card {
+    margin-left: -40px;
+}
+
+.hand .card:first-child {
+    margin-left: 0;
+}
+
+.hand .card:hover {
+    transform: translateY(-25px) scale(1.05);
+    z-index: 100;
+}
+
+.hand .card.playable {
+    border-color: gold;
+    cursor: pointer;
+}
+
+.hand .card.played {
+    animation: play-card-anim 0.3s forwards ease-in;
+}
+
+@keyframes play-card-anim {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-200px) scale(1.1);
+        opacity: 0;
+    }
+}
+
+#opponent-hand .card {
+    margin-left: -80px;
+}
+
+#opponent-hand .card:hover {
+    transform: none;
+}
+
+
+
+#uno-button {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    z-index: 200;
+    background-color: var(--red);
+    font-size: 2em;
+    font-weight: bold;
+    border: 4px solid white;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+#uno-button:hover {
+    transform: scale(1.1);
+}
+
+#notifications {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 10px 25px;
+    border-radius: 50px;
+    font-size: 1.2em;
+    z-index: 200;
+    text-align: center;
+    max-width: 80%;
+    transition: all 0.3s;
+}
+
+
+#color-selector {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    padding: 25px;
+    border-radius: 15px;
+    display: flex;
+    gap: 15px;
+    z-index: 300;
+}
+
+.color-btn {
+    width: 70px;
+    height: 70px;
+    border: 4px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.color-btn:hover {
+    transform: scale(1.15);
+}

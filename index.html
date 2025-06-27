@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNO Web Edition</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<main id="welcome-screen">
+    <div class="card-stack">
+        <div class="welcome-card card-red-4">4</div>
+        <div class="welcome-card card-green-plus2">+2</div>
+        <div class="welcome-card card-yellow-9">9</div>
+        <div class="welcome-card card-blue-wild">W</div>
+    </div>
+    <div class="welcome-content">
+        <h1>UNO</h1>
+    </div>
+    <div class="welcome-buttons">
+        <button id="start-game-btn" class="welcome-button">Jugar</button>
+    </div>
+</main>
+
+<main id="game-board" class="hidden">
+
+    <section class="player-area" id="opponent-area">
+        <div class="player-info">
+            <span id="opponent-name" class="player-name">Oponente</span>
+            <span id="opponent-card-count" class="card-count"></span>
+        </div>
+        <div class="hand" id="opponent-hand"></div>
+    </section>
+
+    <section class="center-area">
+        <div id="deck" class="card-pile" title="Robar carta"></div>
+        <div id="discard-pile" class="card-pile"></div>
+        <div id="color-indicator"></div>
+    </section>
+
+    <section class="player-area" id="player-area">
+        <div class="player-info">
+            <span id="player-name" class="player-name">Jugador 1</span>
+            <span id="player-card-count" class="card-count"></span>
+        </div>
+        <div class="hand" id="player-hand"></div>
+    </section>
+
+    <button id="uno-button" title="Presiona cuando te quede 1 carta">¡UNO!</button>
+    <div id="notifications"></div>
+</main>
+
+<div id="color-selector" class="hidden"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
