@@ -123,8 +123,6 @@ function playCard(playerIndex, cardIndex) {
         gameState.currentColor = card.color;
         console.log(`${player.name} jugó ${card.id}`);
         
-        
-
         nextTurn();
     } else {
         console.log("Invalid play.");
@@ -140,4 +138,62 @@ function checkUNO(playerIndex) {
         console.log(`${player.name} has no cards left!`);
         endGame(player);
     }
+}
+
+function drawCard(playerIndex) {
+    let player = players[playerIndex];
+    if (deck.length > 0) {
+        let card = deck.pop();
+        player.cards.push(card);
+        console.log(`${player.name} drew a card: ${card.id}`);
+        
+    } else {
+        console.log("No cards left in the deck to draw.");
+    }
+}
+
+function nextTurn() {
+    let nextPlayerIndex = gameState.turn + gameState.direction;
+
+    if (nextPlayerIndex < 0) {
+        nextPlayerIndex = players.length - 1;
+    }
+
+    if (nextPlayerIndex > players.length) {
+        nextPlayerIndex = 0;
+    }
+
+    gameState.turn = nextPlayerIndex;
+}
+
+function countPoints(winnerIndex) {
+    let totalPoints = 0;
+    let winner = players[winnerIndex];
+
+    for (let player of players) {
+        for (let card of player.cards) {
+            totalPoints += card.value;
+        }
+    }
+
+    winner.points += totalPoints;
+    console.log(`${winner.name} has ${winner.points} points.`);
+}
+
+function resetRound() {
+    gameState.discardPile = [];
+    gameState.deck = [];
+    gameState.turn = 0;
+    gameState.direction = 1;
+    gameState.currentColor = null;
+    gameState.waitingForColor = false;
+    gameState.roundWinner = null;
+
+    for (let player of players) {
+        player.cards = [];
+        player.saidUNO = false;
+    }
+
+    initializeDeck();
+    dealCards();
 }
