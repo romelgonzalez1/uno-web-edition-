@@ -201,33 +201,28 @@ function renderPlayerHand() {
     });
 }
 
-function renderOpponentHand() {
-    const opponentArea = document.getElementById("opponent-area");
-    opponentArea.innerHTML = "";
-    const cpu = gameState.players[1];
-    if (!cpu) return;
-
-    for (let i = 0; i < players.length; i++) {
-        if (!players[i].isHuman) {
-            
-            const handDiv = document.createElement("div");
-            handDiv.className = "hand";
-            for (let j = 0; j < players[i].cards.length; j++) {
-                const cardDiv = document.createElement("div");
-                cardDiv.className = "card back";
-                handDiv.appendChild(cardDiv);
-            }
-            opponentArea.appendChild(handDiv);
+function renderOpponentHands() {
+    // Renderiza las manos de los 3 CPUs (índices 1, 2 y 3)
+    for (let cpuIdx = 1; cpuIdx <= 3; cpuIdx++) {
+        const area = document.getElementById(`opponent-area-${cpuIdx}`);
+        area.innerHTML = "";
+        const cpu = gameState.players[cpuIdx];
+        if (!cpu) continue;
+        // Nombre del CPU
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "player-info";
+        nameDiv.textContent = cpu.name;
+        area.appendChild(nameDiv);
+        // Mano del CPU
+        const handDiv = document.createElement("div");
+        handDiv.className = "hand";
+        for (let j = 0; j < cpu.cards.length; j++) {
+            const cardDiv = document.createElement("div");
+            cardDiv.className = "card back";
+            handDiv.appendChild(cardDiv);
         }
+        area.appendChild(handDiv);
     }
-    // const handDiv = document.createElement("div");
-    // handDiv.className = "hand";
-    // for (let i = 0; i < cpu.cards.length; i++) {
-    //     const cardDiv = document.createElement("div");
-    //     cardDiv.className = "card back";
-    //     handDiv.appendChild(cardDiv);
-    // }
-    // opponentArea.appendChild(handDiv);
 }
 
 function renderCenterArea() {
@@ -248,7 +243,7 @@ function renderCenterArea() {
                 setTimeout(console.log('turno: '+ gameState.turn), 500);            
                 renderPlayerHand();
                 renderCenterArea();
-                renderOpponentHand();
+                renderOpponentHands();
             }
         };
         deckDiv.appendChild(deckCard);
@@ -282,7 +277,7 @@ function handlePlayerPlay(cardIndex) {
         playCard(0, cardIndex);
         renderPlayerHand();
         renderCenterArea();
-        renderOpponentHand();
+        renderOpponentHands();
         setTimeout(console.log(gameState.turn), 500);
     } else {
         alert("No puedes jugar esa carta.");
@@ -290,15 +285,12 @@ function handlePlayerPlay(cardIndex) {
 }
 
 function cpuTurn() {
-    const cpu = gameState.players[1];
-
     for (let i = 0; i < gameState.players.length; i++) {
         let played = false;
         if (!players[i].isHuman && i === gameState.turn) {
             for (let j = 0; j < players[i].cards.length; j++) {
                 if (isValidPlay(players[i].cards[j])) {
                     playCard(i, j);
-                    // nextTurn();
                     played = true;
                     break;
                 }
@@ -309,11 +301,9 @@ function cpuTurn() {
             }
             renderPlayerHand();
             renderCenterArea();
-            renderOpponentHand();
-            // break;
+            renderOpponentHands();
         }
     }
-    
 }
 
 // EVENTOS --------------------------------------------------------------------------------------------------
@@ -331,10 +321,10 @@ document.addEventListener("DOMContentLoaded", function() {
         const player2 = new Player(1, "CPU 1", [], 0, false, false);
         const player3 = new Player(2, "CPU 2", [], 0, false, false);
         const player4 = new Player(3, "CPU 3", [], 0, false, false);
-        startGame([player1, player2, player3]);
+        startGame([player1, player2, player3, player4]);
         renderPlayerHand();
         renderCenterArea();
-        renderOpponentHand(); 
+        renderOpponentHands();
     });
 
     multiBtn.addEventListener("click", () => {
@@ -396,6 +386,7 @@ document.addEventListener("DOMContentLoaded", function() {
         startGame(playerList);
         renderPlayerHand();
         renderCenterArea();
+        renderOpponentHands();
     });
 
     document.getElementById("uno-btn").addEventListener("click", () => {
