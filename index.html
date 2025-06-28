@@ -19,36 +19,46 @@
         <h1>UNO</h1>
     </div>
     <div class="welcome-buttons">
-        <button id="start-game-btn" class="welcome-button">Jugar</button>
+        <button id="singleplayer-btn" class="welcome-button">Singleplayer</button>
+        <button id="multiplayer-btn" class="welcome-button">Multiplayer</button>
+        <div id="multiplayer-options" class="hidden">
+            <label for="player-count">Cantidad de jugadores:</label>
+            <input type="number" id="player-count" min="2" max="6" value="2" style="width: 50px;">
+            <button id="start-multiplayer-btn" class="welcome-button">Jugar</button>
+        </div>
     </div>
 </main>
 
-<main id="game-board" class="hidden">
+<div id="player-setup-modal" class="hidden modal-bg">
+    <div class="modal">
+        <h2>Configura los jugadores</h2>
+        <form id="player-setup-form">
+            <div id="player-inputs"></div>
+            <button type="submit" class="welcome-button">Comenzar partida</button>
+            <button type="button" id="cancel-setup" class="welcome-button">Cancelar</button>
+        </form>
+    </div>
+</div>
 
+<main id="game-board" class="hidden">
+    
     <section class="player-area" id="opponent-area">
-        <div class="player-info">
-            <span id="opponent-name" class="player-name">Oponente</span>
-            <span id="opponent-card-count" class="card-count"></span>
-        </div>
-        <div class="hand" id="opponent-hand"></div>
+        
     </section>
 
     <section class="center-area">
-        <div id="deck" class="card-pile" title="Robar carta"></div>
+        <div id="deck" class="card-pile">
+            <span id="deck-count" class="deck-count"></span>
+        </div>
         <div id="discard-pile" class="card-pile"></div>
-        <div id="color-indicator"></div>
     </section>
 
     <section class="player-area" id="player-area">
         <div class="player-info">
-            <span id="player-name" class="player-name">Jugador 1</span>
-            <span id="player-card-count" class="card-count"></span>
+            <span id="player-name"></span>
+            <button id="uno-btn" class="uno-btn">UNO</button>
         </div>
-        <div class="hand" id="player-hand"></div>
     </section>
-
-    <button id="uno-button" title="Presiona cuando te quede 1 carta">¡UNO!</button>
-    <div id="notifications"></div>
 </main>
 
 <div id="color-selector" class="hidden"></div>
