@@ -144,6 +144,9 @@ function playCard(playerIndex, cardIndex) {
         gameState.discardPile.push(card);
         gameState.currentColor = card.color;
         nextTurn();
+        setTimeout(console.log(''), 500);  
+        setTimeout(cpuTurn, 500);
+        setTimeout(console.log('turno: '+ gameState.turn), 500);
     }
 }
 
@@ -171,6 +174,8 @@ function nextTurn() {
     if (nextPlayerIndex < 0) nextPlayerIndex = gameState.players.length - 1;
     if (nextPlayerIndex >= gameState.players.length) nextPlayerIndex = 0;
     gameState.turn = nextPlayerIndex;
+
+    console.log("turno desde nextTurn: " + gameState.turn);
 }
 
 function renderPlayerHand() {
@@ -201,14 +206,28 @@ function renderOpponentHand() {
     opponentArea.innerHTML = "";
     const cpu = gameState.players[1];
     if (!cpu) return;
-    const handDiv = document.createElement("div");
-    handDiv.className = "hand";
-    for (let i = 0; i < cpu.cards.length; i++) {
-        const cardDiv = document.createElement("div");
-        cardDiv.className = "card back";
-        handDiv.appendChild(cardDiv);
+
+    for (let i = 0; i < players.length; i++) {
+        if (!players[i].isHuman) {
+            
+            const handDiv = document.createElement("div");
+            handDiv.className = "hand";
+            for (let j = 0; j < players[i].cards.length; j++) {
+                const cardDiv = document.createElement("div");
+                cardDiv.className = "card back";
+                handDiv.appendChild(cardDiv);
+            }
+            opponentArea.appendChild(handDiv);
+        }
     }
-    opponentArea.appendChild(handDiv);
+    // const handDiv = document.createElement("div");
+    // handDiv.className = "hand";
+    // for (let i = 0; i < cpu.cards.length; i++) {
+    //     const cardDiv = document.createElement("div");
+    //     cardDiv.className = "card back";
+    //     handDiv.appendChild(cardDiv);
+    // }
+    // opponentArea.appendChild(handDiv);
 }
 
 function renderCenterArea() {
@@ -223,6 +242,10 @@ function renderCenterArea() {
         deckCard.onclick = () => {
             if (gameState.getCurrentPlayer().isHuman) {
                 drawCard(0);
+                nextTurn();
+                setTimeout(console.log(''), 500);  
+                setTimeout(cpuTurn, 500);   
+                setTimeout(console.log('turno: '+ gameState.turn), 500);            
                 renderPlayerHand();
                 renderCenterArea();
                 renderOpponentHand();
@@ -260,7 +283,7 @@ function handlePlayerPlay(cardIndex) {
         renderPlayerHand();
         renderCenterArea();
         renderOpponentHand();
-        setTimeout(cpuTurn, 800);
+        setTimeout(console.log(gameState.turn), 500);
     } else {
         alert("No puedes jugar esa carta.");
     }
@@ -268,20 +291,29 @@ function handlePlayerPlay(cardIndex) {
 
 function cpuTurn() {
     const cpu = gameState.players[1];
-    let played = false;
-    for (let i = 0; i < cpu.cards.length; i++) {
-        if (isValidPlay(cpu.cards[i])) {
-            playCard(1, i);
-            played = true;
-            break;
+
+    for (let i = 0; i < gameState.players.length; i++) {
+        let played = false;
+        if (!players[i].isHuman && i === gameState.turn) {
+            for (let j = 0; j < players[i].cards.length; j++) {
+                if (isValidPlay(players[i].cards[j])) {
+                    playCard(i, j);
+                    // nextTurn();
+                    played = true;
+                    break;
+                }
+            }
+            if (!played) {
+                drawCard(i);
+                nextTurn();
+            }
+            renderPlayerHand();
+            renderCenterArea();
+            renderOpponentHand();
+            // break;
         }
     }
-    if (!played) {
-        drawCard(1);
-    }
-    renderPlayerHand();
-    renderCenterArea();
-    renderOpponentHand();
+    
 }
 
 // EVENTOS --------------------------------------------------------------------------------------------------
@@ -296,8 +328,10 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById("game-board").classList.remove("hidden");
         initializeDeck();
         const player1 = new Player(0, "Tú", [], 0, false, true);
-        const player2 = new Player(1, "CPU", [], 0, false, false);
-        startGame([player1, player2]);
+        const player2 = new Player(1, "CPU 1", [], 0, false, false);
+        const player3 = new Player(2, "CPU 2", [], 0, false, false);
+        const player4 = new Player(3, "CPU 3", [], 0, false, false);
+        startGame([player1, player2, player3]);
         renderPlayerHand();
         renderCenterArea();
         renderOpponentHand(); 
