@@ -73,6 +73,13 @@ class Game {
         return this.players[this.turn];
     }
 
+    getNextPlayerIndex() {
+        let nextPlayerIndex = this.turn + this.direction;
+        if (nextPlayerIndex < 0) nextPlayerIndex = this.players.length - 1;
+        if (nextPlayerIndex >= this.players.length) nextPlayerIndex = 0;
+        return nextPlayerIndex;
+    }
+
     getTopDiscard() {
         return this.discardPile[this.discardPile.length - 1];
     }
@@ -87,6 +94,11 @@ const specialCards = ["jump", "reverse", "drawTwo"];
 
 let players = [];
 let gameState = new Game(players, deck, discardPile);
+
+const player1 = new Player(0, "Tú", [], 0, false, true);
+const player2 = new Player(1, "CPU 1", [], 0, false, false);
+const player3 = new Player(2, "CPU 2", [], 0, false, false);
+const player4 = new Player(3, "CPU 3", [], 0, false, false);
 
 // FUNCIONES ------------------------------------------------------------------------------------------------
 
@@ -135,7 +147,7 @@ function isValidPlay(card) {
     return card.color === gameState.currentColor || (card.type === currentCard.type && card.value === currentCard.value);
 }
 
-function playCard(playerIndex, cardIndex) {
+async function playCard(playerIndex, cardIndex) {
     let player = gameState.players[playerIndex];
     let card = player.cards[cardIndex];
 
@@ -143,10 +155,29 @@ function playCard(playerIndex, cardIndex) {
         player.removeCard(cardIndex);
         gameState.discardPile.push(card);
         gameState.currentColor = card.color;
-        nextTurn();
-        setTimeout(console.log(''), 500);  
-        setTimeout(cpuTurn, 500);
-        setTimeout(console.log('turno: '+ gameState.turn), 500);
+        if (card.type === "reverse") {
+            gameState.direction *= -1;
+            console.log("Dirección cambiada: " + gameState.direction);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        if (card.type === "drawTwo") {
+            console.log("Jugador " + players[playerIndex].name + " le lanzo un +2 a " + players[gameState.getNextPlayerIndex()].name);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            drawCard(gameState.getNextPlayerIndex());
+            drawCard(gameState.getNextPlayerIndex());
+            nextTurn();
+        }
+        if (card.type === "jump") {
+            console.log("Jugador " + players[playerIndex].name + " le cancelo el turno a " + players[gameState.getNextPlayerIndex()].name);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            nextTurn();
+        }
+
+        if(!checkWinner(playerIndex)){
+            nextTurn();
+            cpuTurn();
+        }
+
     }
 }
 
@@ -154,11 +185,43 @@ function checkUNO(playerIndex) {
     let player = gameState.players[playerIndex];
     if (player.cards.length === 1 && !player.saidUNO) {
         player.saidUNO = true;
-        // Mostrar mensaje UNO
-    } else if (player.cards.length === 0) {
-        // Fin de partida
-        endGame(player);
+        alert("¡UNO!");
+    } else {
+        alert("Solo puedes decir UNO cuando te queda una carta.");
     }
+}
+
+function countPoints(winnerIndex){
+    let totalPoints = 0
+    for (let i = 0; i < gameState.players.length; i++) {
+        for (let j = 0; j < players[i].cards.length; j++) {
+            totalPoints += players[i].cards[j].value
+        }
+    }
+    players[winnerIndex].points = totalPoints
+    gameState.roundWinner = players[winnerIndex]
+    console.log("El jugador: " + players[winnerIndex].name + " sumo " + totalPoints + " puntos")
+}
+
+function resetRound(){
+
+    for (let player in players){
+        player.cards = []
+    }
+
+    initializeDeck();
+    startGame([player1, player2, player3, player4]);
+}
+
+function checkWinner(playerIndex){
+    let player = gameState.players[playerIndex];
+    if (player.cards.length ===0){
+        countPoints(playerIndex);
+        resetRound();
+        alert("Felicidades! El jugador " + players[playerIndex].name + " Ganó!!")
+        return true;
+    }
+    return false;
 }
 
 function drawCard(playerIndex) {
@@ -238,9 +301,10 @@ function renderCenterArea() {
             if (gameState.getCurrentPlayer().isHuman) {
                 drawCard(0);
                 nextTurn();
-                setTimeout(console.log(''), 500);  
-                setTimeout(cpuTurn, 500);   
-                setTimeout(console.log('turno: '+ gameState.turn), 500);            
+                cpuTurn();
+                // setTimeout(console.log(''), 500);  
+                // setTimeout(cpuTurn, 500);   
+                // setTimeout(console.log('turno: '+ gameState.turn), 500);            
                 renderPlayerHand();
                 renderCenterArea();
                 renderOpponentHands();
@@ -273,19 +337,23 @@ function renderCenterArea() {
 function handlePlayerPlay(cardIndex) {
     const player = gameState.players[0];
     const card = player.cards[cardIndex];
-    if (isValidPlay(card)) {
+    if (isValidPlay(card) && gameState.turn === 0) {
         playCard(0, cardIndex);
         renderPlayerHand();
         renderCenterArea();
         renderOpponentHands();
-        setTimeout(console.log(gameState.turn), 500);
+        // setTimeout(console.log(gameState.turn), 500);
     } else {
         alert("No puedes jugar esa carta.");
     }
 }
 
-function cpuTurn() {
+async function cpuTurn() {
+
     for (let i = 0; i < gameState.players.length; i++) {
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         let played = false;
         if (!players[i].isHuman && i === gameState.turn) {
             for (let j = 0; j < players[i].cards.length; j++) {
@@ -317,10 +385,6 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById("welcome-screen").classList.add("hidden");
         document.getElementById("game-board").classList.remove("hidden");
         initializeDeck();
-        const player1 = new Player(0, "Tú", [], 0, false, true);
-        const player2 = new Player(1, "CPU 1", [], 0, false, false);
-        const player3 = new Player(2, "CPU 2", [], 0, false, false);
-        const player4 = new Player(3, "CPU 3", [], 0, false, false);
         startGame([player1, player2, player3, player4]);
         renderPlayerHand();
         renderCenterArea();
@@ -390,6 +454,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     document.getElementById("uno-btn").addEventListener("click", () => {
+        checkUNO(0)
         const player = gameState.players[0];
         if (player.cards.length === 1 && !player.saidUNO) {
             player.saidUNO = true;
