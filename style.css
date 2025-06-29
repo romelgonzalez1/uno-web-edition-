@@ -18,7 +18,6 @@
 body {
     font-family: 'Poppins', sans-serif;
     height: 100vh;
-    background-color: var(--game-bg);
     color: white;
     overflow: hidden;
 }
@@ -26,8 +25,6 @@ body {
 .hidden {
     display: none !important;
 }
-
-
 
 #welcome-screen {
     display: flex;
@@ -37,11 +34,47 @@ body {
     width: 100%;
     height: 100vh;
     position: relative;
+    background-color: #f7e5e5;
+    opacity: 0.8;
+    background-image: radial-gradient(circle at center center, #f74444, #f7e5e5), repeating-radial-gradient(circle at center center, #f74444, #f74444, 10px, transparent 20px, transparent 10px);
+    background-blend-mode: multiply;
 }
 
 .welcome-content h1 {
     font-size: 8em;
     text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5);
+    position: relative;
+    z-index: 3;
+    background: linear-gradient(135deg, var(--red), var(--blue), var(--green), var(--yellow));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.welcome-content h1::before {
+    display: none;
+}
+
+@keyframes circle-glow {
+    0% {
+        box-shadow: 
+            0 0 30px rgba(255, 255, 255, 0.3),
+            inset 0 0 30px rgba(255, 255, 255, 0.1);
+    }
+    100% {
+        box-shadow: 
+            0 0 50px rgba(255, 255, 255, 0.5),
+            inset 0 0 50px rgba(255, 255, 255, 0.2);
+    }
+}
+
+.welcome-buttons {
+    position: relative;
+    z-index: 3;
 }
 
 .group-info {
@@ -49,35 +82,6 @@ body {
     margin-top: -20px;
     color: rgba(255, 255, 255, 0.8);
 }
-
-.card-stack {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 300px;
-    height: 400px;
-    z-index: -1;
-}
-
-.welcome-card {
-    width: 120px;
-    height: 180px;
-    border: 2px solid white;
-    border-radius: 10px;
-    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.7);
-    position: absolute;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 3em;
-    font-weight: bold;
-}
-
-.card-red-4 { background-color: var(--red); transform: translate(20px, 20px) rotate(10deg); }
-.card-green-plus2 { background-color: var(--green); transform: translate(40px, -30px) rotate(-15deg); }
-.card-yellow-9 { background-color: var(--yellow); transform: translate(-10px, -10px) rotate(5deg); }
-.card-blue-wild { background: var(--blue); transform: translate(-30px, 30px) rotate(-20deg); }
 
 .welcome-button {
     background-color: var(--black);
@@ -97,8 +101,6 @@ body {
     transform: scale(1.05);
 }
 
-
-
 #game-board {
     display: flex;
     flex-direction: column;
@@ -108,7 +110,9 @@ body {
     width: 100vw;
     padding: 0;
     position: relative;
-    background: var(--game-bg);
+    background-color: #fdf5f5;
+    background-image: radial-gradient(circle at center center, #ffcccc, #fdf5f5), repeating-radial-gradient(circle at center center, #ffcccc, #ffcccc, 10px, transparent 20px, transparent 10px);
+    background-blend-mode: multiply;
     overflow: hidden;
 }
 
@@ -145,7 +149,6 @@ body {
     margin: 40px 0 60px 0;
     min-height: 180px;
 }
-
 
 .card-pile {
     position: relative;
@@ -211,8 +214,9 @@ body {
 .card.blue { background-color: var(--blue); }
 .card.yellow { background-color: var(--yellow); }
 .card.wild { background: radial-gradient(circle, #555, #333); border-color: #eee; }
-
-
+.card.black {
+    background: #222;
+}
 
 .hand .card {
     margin-left: -40px;
@@ -258,10 +262,10 @@ body {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    gap: 120px;         /* Aumenta el espacio entre CPUs */
+    gap: 120px;
     width: 100vw;
     position: absolute;
-    top: 100px;         /* Baja los oponentes para que siempre se vean */
+    top: 100px;
     left: 0;
     z-index: 10;
 }
@@ -286,7 +290,7 @@ body {
     width: 70px;
     height: 100px;
     font-size: 1.3em;
-    margin-left: -18px; /* Junta un poco más las cartas */
+    margin-left: -18px;
 }
 .opponent-area .card:first-child {
     margin-left: 0;
@@ -304,15 +308,19 @@ body {
     right: 30px;
     z-index: 200;
     background-color: var(--red);
-    font-size: 2em;
+    font-size: 1.5em;
     font-weight: bold;
     border: 4px solid white;
-    width: 90px;
-    height: 90px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.2s;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
 }
 
 #uno-button:hover {
@@ -334,33 +342,47 @@ body {
     transition: all 0.3s;
 }
 
-
 #color-selector {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.8);
-    padding: 25px;
-    border-radius: 15px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 30px 40px;
+    border-radius: 18px;
     display: flex;
-    gap: 15px;
-    z-index: 300;
+    gap: 30px;
+    z-index: 9999;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    flex-direction: row;
+    align-items: center;
 }
-
 .color-btn {
     width: 70px;
     height: 70px;
     border: 4px solid white;
-    border-radius: 50%;
+    border-radius: 12px;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
 }
-
 .color-btn:hover {
     transform: scale(1.15);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.28);
 }
-
+.color-btn.red { background: var(--red); }
+.color-btn.green { background: var(--green); }
+.color-btn.blue { background: var(--blue); }
+.color-btn.yellow { background: var(--yellow); }
+.color-btn span {
+    display: block;
+    text-align: center;
+    color: #fff;
+    font-weight: bold;
+    margin-top: 8px;
+    font-size: 1.1em;
+    text-shadow: 1px 1px 4px #000;
+}
 .modal-bg {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -440,21 +462,30 @@ body {
 }
 
 .uno-btn {
-    background: #ff3d00;
-    color: #fff;
+    display: inline-block;
+    background: none;
+    color: #e53935;
+    font-size: 2em;
     font-weight: bold;
     border: none;
-    border-radius: 8px;
-    padding: 0.5em 1.5em;
-    font-size: 1.2em;
+    outline: none;
+    padding: 0.2em 0.7em;
     margin-left: 1em;
+    letter-spacing: 3px;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    transition: background 0.2s, transform 0.1s;
+    text-shadow: 2px 2px 8px #fff, 0 0 4px #e53935;
+    transition: color 0.2s, text-shadow 0.2s, transform 0.1s;
 }
-.uno-btn:hover {
-    background: #ff9800;
-    transform: scale(1.08);
+.uno-btn:hover, .uno-btn:focus {
+    color: #fff;
+    background: #e53935;
+    text-shadow: 2px 2px 12px #e53935, 0 0 8px #fff;
+    transform: scale(1.12) rotate(-3deg);
+}
+.uno-btn:active {
+    color: #fff;
+    background: #b71c1c;
+    transform: scale(0.98);
 }
 .deck-count {
     position: absolute;
@@ -472,4 +503,95 @@ body {
     font-size: 1.1em;
     border: 2px solid #fff;
     z-index: 2;
+}
+
+.card.wild-chosen-red, .card.wildDrawFour.wild-chosen-red {
+    background: linear-gradient(135deg, #e53935 100%, #222 100%);
+    border-color: #e53935;
+}
+.card.wild-chosen-green, .card.wildDrawFour.wild-chosen-green {
+    background: linear-gradient(135deg, #43a047 100%, #222 100%);
+    border-color: #43a047;
+}
+.card.wild-chosen-blue, .card.wildDrawFour.wild-chosen-blue {
+    background: linear-gradient(135deg, #1e88e5 100%, #222 100%);
+    border-color: #1e88e5;
+}
+.card.wild-chosen-yellow, .card.wildDrawFour.wild-chosen-yellow {
+    background: linear-gradient(135deg, #fbc02d 100%, #222 100%);
+    border-color: #fbc02d;
+}
+
+#victory-modal .modal {
+    text-align: center;
+    background: #fff;
+    color: #222;
+    border-radius: 18px;
+    padding: 2.5em 2em;
+    min-width: 340px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+#victory-message {
+    font-size: 2em;
+    margin-bottom: 1.5em;
+    color: #43a047;
+}
+
+.turn-indicator {
+    text-align: center;
+    font-size: 1.4em;
+    font-weight: bold;
+    margin: 18px 0 10px 0;
+    color: #fff;
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 6px #1e88e5, 0 0 4px #000;
+}
+
+.cpu-notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9998;
+    pointer-events: none;
+}
+
+.notification-content {
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    color: white;
+    padding: 20px 30px;
+    border-radius: 15px;
+    border: 3px solid #ecf0f1;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    font-size: 1.8em;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    animation: notification-appear 0.3s ease-out;
+}
+
+@keyframes notification-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translate(-50%, -50%);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translate(-50%, -50%);
+    }
+}
+
+.cpu-notification.fade-out {
+    animation: notification-disappear 0.3s ease-in forwards;
+}
+
+@keyframes notification-disappear {
+    from {
+        opacity: 1;
+        transform: scale(1) translate(-50%, -50%);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.8) translate(-50%, -50%);
+    }
 }

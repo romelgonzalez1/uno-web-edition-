@@ -9,12 +9,6 @@
 <body>
 
 <main id="welcome-screen">
-    <div class="card-stack">
-        <div class="welcome-card card-red-4">4</div>
-        <div class="welcome-card card-green-plus2">+2</div>
-        <div class="welcome-card card-yellow-9">9</div>
-        <div class="welcome-card card-blue-wild">W</div>
-    </div>
     <div class="welcome-content">
         <h1>UNO</h1>
     </div>
@@ -51,16 +45,30 @@
             <span id="deck-count" class="deck-count"></span>
         </div>
         <div id="discard-pile" class="card-pile"></div>
+        <div id="turn-indicator" class="turn-indicator"></div>
     </section>
     <section class="player-area" id="player-area">
         <div class="player-info">
             <span id="player-name"></span>
-            <button id="uno-btn" class="uno-btn">UNO</button>
+            <button id="uno-button">UNO</button>
         </div>
     </section>
 </main>
 
+<div id="victory-modal" class="modal-bg hidden">
+    <div class="modal">
+        <h2 id="victory-message">¡Victoria!</h2>
+        <button id="play-again-btn" class="welcome-button">Jugar de nuevo</button>
+    </div>
+</div>
+
 <div id="color-selector" class="hidden"></div>
+
+<div id="cpu-notification" class="cpu-notification hidden">
+    <div class="notification-content">
+        <span id="notification-text"></span>
+    </div>
+</div>
 
 <script src="script.js"></script>
 </body>

@@ -30,11 +30,35 @@ class Card {
                 </svg>
             `;
         }
+        if (this.type === "wild" || this.type === "wildDrawFour") {
+            return `
+                <div style="display:flex;flex-direction:column;align-items:center;">
+                    <svg width="32" height="32" viewBox="0 0 32 32">
+                        <defs>
+                            <linearGradient id="uno-wild" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#e53935"/>
+                                <stop offset="25%" stop-color="#43a047"/>
+                                <stop offset="50%" stop-color="#1e88e5"/>
+                                <stop offset="75%" stop-color="#fbc02d"/>
+                            </linearGradient>
+                        </defs>
+                        <circle cx="16" cy="16" r="14" fill="url(#uno-wild)" stroke="#fff" stroke-width="2"/>
+                    </svg>
+                    <span style="font-weight:bold;color:#fff;font-size:18px;">
+                        ${this.type === "wildDrawFour" ? "+4" : "WILD"}
+                    </span>
+                </div>
+            `;
+        }
         return this.type === "number" ? this.value : this.type.toUpperCase();
     }
 
     getCssClasses() {
-        return `card ${this.color} ${this.type}`;
+        let classes = `card ${this.color} ${this.type}`;
+        if ((this.type === "wild" || this.type === "wildDrawFour") && this.chosenColor) {
+            classes += ` wild-chosen-${this.chosenColor}`;
+        }
+        return classes;
     }
 }
 
@@ -100,6 +124,10 @@ const player2 = new Player(1, "CPU 1", [], 0, false, false);
 const player3 = new Player(2, "CPU 2", [], 0, false, false);
 const player4 = new Player(3, "CPU 3", [], 0, false, false);
 
+// Sistema de cola para notificaciones
+let notificationQueue = [];
+let isShowingNotification = false;
+
 // FUNCIONES ------------------------------------------------------------------------------------------------
 
 function initializeDeck() {
@@ -111,6 +139,11 @@ function initializeDeck() {
         for (let type of specialCards) {
             deck.push(new Card(color.charAt(0).toUpperCase() + "-" + type, color, type, 20));
         }
+    }
+    // Agregar cartas comodín
+    for (let i = 0; i < 4; i++) {
+        deck.push(new Card("WILD-" + i, "black", "wild", 50));
+        deck.push(new Card("WILD4-" + i, "black", "wildDrawFour", 50));
     }
     shuffle(deck);
 }
@@ -126,6 +159,7 @@ function startGame(playerList) {
     players = playerList;
     gameState = new Game(players, deck, discardPile, 0, 1, null, false, null);
     dealCards();
+    updateTurnIndicator();
 }
 
 function dealCards() {
@@ -137,47 +171,136 @@ function dealCards() {
         }
     }
     gameState.discardPile = [];
-    const firstCard = gameState.deck.pop();
+    let firstCard;
+    // Buscar la primera carta válida
+    do {
+        firstCard = gameState.deck.pop();
+        // Si la carta no es número, la ponemos al final del mazo
+        if (firstCard.type !== "number") {
+            gameState.deck.unshift(firstCard);
+        }
+    } while (firstCard.type !== "number");
     gameState.discardPile.push(firstCard);
     gameState.currentColor = firstCard.color;
 }
 
 function isValidPlay(card) {
     let currentCard = gameState.getTopDiscard();
+    
+    // Para cartas WILD +4, verificar que no tenga cartas del color actual
+    if (card.type === "wildDrawFour") {
+        const player = gameState.getCurrentPlayer();
+        // Verificar si la CPU tiene cartas del color actual
+        for (let c of player.cards) {
+            if (c.color === gameState.currentColor) {
+                return false; // No juega WILD +4 si tiene cartas del color actual
+            }
+        }
+        return true; // Solo juega WILD +4 si no tiene cartas del color actual
+    }
+    
+    // Las cartas wild normales siempre se pueden jugar
+    if (card.type === "wild") {
+        return true;
+    }
+    
     return card.color === gameState.currentColor || (card.type === currentCard.type && card.value === currentCard.value);
 }
 
 async function playCard(playerIndex, cardIndex) {
     let player = gameState.players[playerIndex];
     let card = player.cards[cardIndex];
+    
+    console.log(`🎮 ${player.name} jugó: ${card.type === "number" ? card.value : card.type} ${card.color} - Turno: ${gameState.turn}`);
 
     if (isValidPlay(card)) {
         player.removeCard(cardIndex);
         gameState.discardPile.push(card);
-        gameState.currentColor = card.color;
+
+        if (card.type === "wild" || card.type === "wildDrawFour") {
+            let chosenColor;
+            if (player.isHuman) {
+                chosenColor = await showColorSelector();
+            } else {
+                let colorCount = {red:0, green:0, blue:0, yellow:0};
+                for (let c of player.cards) {
+                    if (colorCount[c.color] !== undefined) colorCount[c.color]++;
+                }
+                chosenColor = Object.keys(colorCount).reduce((a, b) => colorCount[a] > colorCount[b] ? a : b);
+            }
+            gameState.currentColor = chosenColor;
+            card.chosenColor = chosenColor;
+            
+            if (!player.isHuman) {
+                showCpuNotification(player.name, card.type, card.color, card.value, chosenColor);
+            }
+
+            if (card.type === "wildDrawFour") {
+                let nextIdx = gameState.getNextPlayerIndex();
+                for (let i = 0; i < 4; i++) {
+                    drawCard(nextIdx);
+                }
+                nextTurn();
+            }
+        } else {
+            gameState.currentColor = card.color;
+            
+            if (!player.isHuman) {
+                showCpuNotification(player.name, card.type, card.color, card.value, card.chosenColor);
+            }
+        }
+
+        // Penalización por no decir UNO
+        if (
+            player.isHuman &&
+            player.cards.length === 1 &&
+            !player.saidUNO
+        ) {
+            alert("¡Olvidaste decir UNO! Robas 2 cartas.");
+            drawCard(playerIndex);
+            drawCard(playerIndex);
+        }
+        player.saidUNO = false; 
+
         if (card.type === "reverse") {
             gameState.direction *= -1;
-            console.log("Dirección cambiada: " + gameState.direction);
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
         if (card.type === "drawTwo") {
-            console.log("Jugador " + players[playerIndex].name + " le lanzo un +2 a " + players[gameState.getNextPlayerIndex()].name);
+            const nextPlayer = gameState.players[gameState.getNextPlayerIndex()];
             await new Promise(resolve => setTimeout(resolve, 1000));
             drawCard(gameState.getNextPlayerIndex());
             drawCard(gameState.getNextPlayerIndex());
+            if (!nextPlayer.isHuman) {
+                showCpuDrawNotification(nextPlayer.name, 2);
+            }
             nextTurn();
         }
         if (card.type === "jump") {
-            console.log("Jugador " + players[playerIndex].name + " le cancelo el turno a " + players[gameState.getNextPlayerIndex()].name);
+            const nextPlayer = gameState.players[gameState.getNextPlayerIndex()];
             await new Promise(resolve => setTimeout(resolve, 1000));
-            nextTurn();
         }
 
-        if(!checkWinner(playerIndex)){
-            nextTurn();
-            cpuTurn();
+        if (!checkWinner(playerIndex)) {
+            let specialCardPlayed = card.type === "drawTwo" || card.type === "wildDrawFour";
+            
+            if (!specialCardPlayed) {
+                if (card.type === "jump") {
+                    nextTurn();
+                    nextTurn();
+                } else {
+                    nextTurn();
+                }
+            }
+            
+            if (!gameState.players[gameState.turn].isHuman) {
+                cpuTurn();
+            }
+        } else {
+            console.log(`${player.name} ha ganado!`);
         }
-
+    } else {
+        console.log(`Carta no válida`);
     }
 }
 
@@ -194,40 +317,53 @@ function checkUNO(playerIndex) {
 function countPoints(winnerIndex){
     let totalPoints = 0
     for (let i = 0; i < gameState.players.length; i++) {
-        for (let j = 0; j < players[i].cards.length; j++) {
-            totalPoints += players[i].cards[j].value
+        for (let j = 0; j < gameState.players[i].cards.length; j++) {
+            totalPoints += gameState.players[i].cards[j].value
         }
     }
-    players[winnerIndex].points = totalPoints
-    gameState.roundWinner = players[winnerIndex]
-    console.log("El jugador: " + players[winnerIndex].name + " sumo " + totalPoints + " puntos")
+    gameState.players[winnerIndex].points = totalPoints
+    gameState.roundWinner = gameState.players[winnerIndex]
+    console.log("El jugador: " + gameState.players[winnerIndex].name + " sumo " + totalPoints + " puntos")
 }
 
 function resetRound(){
-
-    for (let player in players){
+    for (let player of gameState.players){
         player.cards = []
     }
 
     initializeDeck();
-    startGame([player1, player2, player3, player4]);
+    startGame(gameState.players);
 }
 
 function checkWinner(playerIndex){
     let player = gameState.players[playerIndex];
-    if (player.cards.length ===0){
+    if (player.cards.length === 0){
         countPoints(playerIndex);
-        resetRound();
-        alert("Felicidades! El jugador " + players[playerIndex].name + " Ganó!!")
+        showVictoryModal(player.name);
         return true;
     }
     return false;
 }
 
+function showVictoryModal(winnerName) {
+    const modal = document.getElementById("victory-modal");
+    const msg = document.getElementById("victory-message");
+    msg.textContent = `¡${winnerName} ha ganado la partida!`;
+    modal.classList.remove("hidden");
+}
+
 function drawCard(playerIndex) {
     let player = gameState.players[playerIndex];
-    if (deck.length > 0) {
-        let card = deck.pop();
+    // Si el mazo está vacío, recarga desde el descarte
+    if (gameState.deck.length === 0 && gameState.discardPile.length > 1) {
+        // Toma todas menos la última carta del descarte
+        const lastDiscard = gameState.discardPile.pop();
+        gameState.deck = gameState.discardPile;
+        shuffle(gameState.deck);
+        gameState.discardPile = [lastDiscard];
+    }
+    if (gameState.deck.length > 0) {
+        let card = gameState.deck.pop();
         player.addCard(card);
     }
 }
@@ -236,16 +372,28 @@ function nextTurn() {
     let nextPlayerIndex = gameState.turn + gameState.direction;
     if (nextPlayerIndex < 0) nextPlayerIndex = gameState.players.length - 1;
     if (nextPlayerIndex >= gameState.players.length) nextPlayerIndex = 0;
+    
     gameState.turn = nextPlayerIndex;
 
-    console.log("turno desde nextTurn: " + gameState.turn);
+    updateTurnIndicator();
+    const player = gameState.players[gameState.turn];
+    console.log(`Turno: ${player.name}`);
+}
+
+function updateTurnIndicator() {
+    const indicator = document.getElementById("turn-indicator");
+    const player = gameState.players[gameState.turn];
+    if (player.isHuman) {
+        indicator.textContent = "¡Tu turno!";
+    } else {
+        indicator.textContent = `Turno de: ${player.name}`;
+    }
 }
 
 function renderPlayerHand() {
     const playerArea = document.getElementById("player-area");
     playerArea.querySelector("#player-name").textContent = gameState.players[0].name;
 
-    // Renderiza la mano
     let handDiv = playerArea.querySelector(".hand");
     if (!handDiv) {
         handDiv = document.createElement("div");
@@ -262,10 +410,21 @@ function renderPlayerHand() {
         cardDiv.onclick = () => handlePlayerPlay(idx);
         handDiv.appendChild(cardDiv);
     });
+
+    const unoBtn = document.getElementById("uno-button");
+    if (
+        player.isHuman &&
+        player.cards.length === 2 &&
+        !player.saidUNO
+    ) {
+        unoBtn.style.display = "block";
+        unoBtn.disabled = false;
+    } else {
+        unoBtn.style.display = "none";
+    }
 }
 
 function renderOpponentHands() {
-    // Renderiza las manos de los 3 CPUs (índices 1, 2 y 3)
     for (let cpuIdx = 1; cpuIdx <= 3; cpuIdx++) {
         const area = document.getElementById(`opponent-area-${cpuIdx}`);
         area.innerHTML = "";
@@ -289,9 +448,8 @@ function renderOpponentHands() {
 }
 
 function renderCenterArea() {
-    // Mazo (deck)
     const deckDiv = document.getElementById("deck");
-    deckDiv.innerHTML = ""; // Limpia el mazo
+    deckDiv.innerHTML = "";
 
     if (gameState.deck.length > 0) {
         const deckCard = document.createElement("div");
@@ -301,10 +459,9 @@ function renderCenterArea() {
             if (gameState.getCurrentPlayer().isHuman) {
                 drawCard(0);
                 nextTurn();
-                cpuTurn();
-                // setTimeout(console.log(''), 500);  
-                // setTimeout(cpuTurn, 500);   
-                // setTimeout(console.log('turno: '+ gameState.turn), 500);            
+                if (!gameState.players[gameState.turn].isHuman) {
+                    cpuTurn();
+                }
                 renderPlayerHand();
                 renderCenterArea();
                 renderOpponentHands();
@@ -312,7 +469,6 @@ function renderCenterArea() {
         };
         deckDiv.appendChild(deckCard);
 
-        // Cantidad de cartas en el deck
         const deckCount = document.createElement("span");
         deckCount.id = "deck-count";
         deckCount.className = "deck-count";
@@ -320,7 +476,6 @@ function renderCenterArea() {
         deckDiv.appendChild(deckCount);
     }
 
-    // Descarte (discard pile)
     const discardDiv = document.getElementById("discard-pile");
     discardDiv.innerHTML = "";
     const topCard = gameState.getTopDiscard();
@@ -332,45 +487,175 @@ function renderCenterArea() {
     }
 }
 
-// Llama a renderPlayerHand() y renderCenterArea() después de cada jugada
-
 function handlePlayerPlay(cardIndex) {
     const player = gameState.players[0];
     const card = player.cards[cardIndex];
+    
     if (isValidPlay(card) && gameState.turn === 0) {
         playCard(0, cardIndex);
         renderPlayerHand();
         renderCenterArea();
         renderOpponentHands();
-        // setTimeout(console.log(gameState.turn), 500);
-    } else {
-        alert("No puedes jugar esa carta.");
     }
 }
 
 async function cpuTurn() {
-
-    for (let i = 0; i < gameState.players.length; i++) {
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
+    const cpu = gameState.players[gameState.turn];
+    
+    if (!cpu.isHuman) {
+        await new Promise(resolve => setTimeout(resolve, 2500)); // Espera 2.5 segundos
         let played = false;
-        if (!players[i].isHuman && i === gameState.turn) {
-            for (let j = 0; j < players[i].cards.length; j++) {
-                if (isValidPlay(players[i].cards[j])) {
-                    playCard(i, j);
+        
+        for (let j = 0; j < cpu.cards.length; j++) {
+            const card = cpu.cards[j];
+            if (card && card.type !== "wildDrawFour" && isValidPlay(card)) {
+                await playCard(gameState.turn, j);
+                played = true;
+                break;
+            }
+        }
+        
+        if (!played) {
+            for (let j = 0; j < cpu.cards.length; j++) {
+                const card = cpu.cards[j];
+                if (card && card.type === "wildDrawFour" && isValidPlay(card)) {
+                    await playCard(gameState.turn, j);
                     played = true;
                     break;
                 }
             }
-            if (!played) {
-                drawCard(i);
-                nextTurn();
-            }
-            renderPlayerHand();
-            renderCenterArea();
-            renderOpponentHands();
         }
+        
+        if (!played) {
+            for (let j = 0; j < cpu.cards.length; j++) {
+                const card = cpu.cards[j];
+                if (card && card.type === "wild" && isValidPlay(card)) {
+                    await playCard(gameState.turn, j);
+                    played = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!played) {
+            console.log(`${cpu.name} robó carta`);
+            drawCard(gameState.turn);
+            showCpuDrawNotification(cpu.name, 1);
+            nextTurn();
+        }
+        
+        renderPlayerHand();
+        renderCenterArea();
+        renderOpponentHands();
+        
+        if (!played && !gameState.players[gameState.turn].isHuman) {
+            cpuTurn();
+        }
+    }
+}
+
+function showColorSelector() {
+    return new Promise(resolve => {
+        const selector = document.getElementById("color-selector");
+        selector.innerHTML = `
+            <button class="color-btn red" data-color="red"></button>
+            <button class="color-btn green" data-color="green"></button>
+            <button class="color-btn blue" data-color="blue"></button>
+            <button class="color-btn yellow" data-color="yellow"></button>
+        `;
+        selector.classList.remove("hidden");
+        const buttons = selector.querySelectorAll(".color-btn");
+        buttons.forEach(btn => {
+            btn.onclick = () => {
+                selector.classList.add("hidden");
+                resolve(btn.getAttribute("data-color"));
+            };
+        });
+    });
+}
+
+function showCpuNotification(cpuName, cardType, cardColor, cardValue, chosenColor = null) {
+    const notification = {
+        cpuName, cardType, cardColor, cardValue, chosenColor
+    };
+    
+    notificationQueue.push(notification);
+    
+    if (!isShowingNotification) {
+        showNextNotification();
+    }
+}
+
+function showNextNotification() {
+    if (notificationQueue.length === 0) {
+        isShowingNotification = false;
+        return;
+    }
+    
+    isShowingNotification = true;
+    const notification = notificationQueue.shift();
+    
+    const notificationElement = document.getElementById("cpu-notification");
+    const notificationText = document.getElementById("notification-text");
+    
+    const colorNames = {
+        'red': 'ROJO',
+        'green': 'VERDE', 
+        'blue': 'AZUL',
+        'yellow': 'AMARILLO'
+    };
+    
+    let message = `${notification.cpuName} jugó: `;
+    
+    if (notification.cardType === "number") {
+        message += `${notification.cardValue} ${colorNames[notification.cardColor]}`;
+    } else if (notification.cardType === "drawTwo") {
+        message += `+2 ${colorNames[notification.cardColor]}`;
+    } else if (notification.cardType === "reverse") {
+        message += `REVERSE ${colorNames[notification.cardColor]}`;
+    } else if (notification.cardType === "jump") {
+        message += `SALTO ${colorNames[notification.cardColor]}`;
+    } else if (notification.cardType === "wild") {
+        if (notification.chosenColor && colorNames[notification.chosenColor]) {
+            message += `WILD - Cambió color a: ${colorNames[notification.chosenColor]}`;
+        } else {
+            message += `WILD`;
+        }
+    } else if (notification.cardType === "wildDrawFour") {
+        if (notification.chosenColor && colorNames[notification.chosenColor]) {
+            message += `WILD +4 - Cambió color a: ${colorNames[notification.chosenColor]}`;
+        } else {
+            message += `WILD +4`;
+        }
+    } else if (notification.cardType === "draw") {
+        if (notification.cardValue === 1) {
+            message = `${notification.cpuName} agarró 1 carta`;
+        } else {
+            message = `${notification.cpuName} agarró ${notification.cardValue} cartas`;
+        }
+    }
+    
+    notificationText.textContent = message;
+    notificationElement.classList.remove("hidden", "fade-out");
+    
+    setTimeout(() => {
+        notificationElement.classList.add("fade-out");
+        setTimeout(() => {
+            notificationElement.classList.add("hidden");
+            showNextNotification();
+        }, 300);
+    }, 2500);
+}
+
+function showCpuDrawNotification(cpuName, cardsDrawn) {
+    const notification = {
+        cpuName, cardType: "draw", cardColor: null, cardValue: cardsDrawn, chosenColor: null
+    };
+    
+    notificationQueue.push(notification);
+    
+    if (!isShowingNotification) {
+        showNextNotification();
     }
 }
 
@@ -389,6 +674,7 @@ document.addEventListener("DOMContentLoaded", function() {
         renderPlayerHand();
         renderCenterArea();
         renderOpponentHands();
+        updateTurnIndicator();
     });
 
     multiBtn.addEventListener("click", () => {
@@ -453,14 +739,33 @@ document.addEventListener("DOMContentLoaded", function() {
         renderOpponentHands();
     });
 
-    document.getElementById("uno-btn").addEventListener("click", () => {
-        checkUNO(0)
-        const player = gameState.players[0];
-        if (player.cards.length === 1 && !player.saidUNO) {
-            player.saidUNO = true;
-            alert("¡UNO!");
-        } else {
-            alert("Solo puedes decir UNO cuando te queda una carta.");
-        }
-    });
+    const unoBtn = document.getElementById("uno-button");
+    if (unoBtn) {
+        unoBtn.addEventListener("click", () => {
+            const player = gameState.players[0];
+            if (
+                player.isHuman &&
+                player.cards.length === 2 &&
+                !player.saidUNO
+            ) {
+                player.saidUNO = true;
+                alert("¡UNO!");
+                renderPlayerHand();
+            } else {
+                alert("Solo puedes decir UNO cuando te queda una carta.");
+            }
+        });
+    }
+
+    const playAgainBtn = document.getElementById("play-again-btn");
+    if (playAgainBtn) {
+        playAgainBtn.addEventListener("click", () => {
+            document.getElementById("victory-modal").classList.add("hidden");
+            initializeDeck();
+            startGame(gameState.players);
+            renderPlayerHand();
+            renderCenterArea();
+            renderOpponentHands();
+        });
+    }
 });
