@@ -124,7 +124,6 @@ const player2 = new Player(1, "CPU 1", [], 0, false, false);
 const player3 = new Player(2, "CPU 2", [], 0, false, false);
 const player4 = new Player(3, "CPU 3", [], 0, false, false);
 
-// Sistema de cola para notificaciones
 let notificationQueue = [];
 let isShowingNotification = false;
 
@@ -140,7 +139,6 @@ function initializeDeck() {
             deck.push(new Card(color.charAt(0).toUpperCase() + "-" + type, color, type, 20));
         }
     }
-    // Agregar cartas comodín
     for (let i = 0; i < 4; i++) {
         deck.push(new Card("WILD-" + i, "black", "wild", 50));
         deck.push(new Card("WILD4-" + i, "black", "wildDrawFour", 50));
@@ -172,10 +170,8 @@ function dealCards() {
     }
     gameState.discardPile = [];
     let firstCard;
-    // Buscar la primera carta válida
     do {
         firstCard = gameState.deck.pop();
-        // Si la carta no es número, la ponemos al final del mazo
         if (firstCard.type !== "number") {
             gameState.deck.unshift(firstCard);
         }
@@ -187,19 +183,16 @@ function dealCards() {
 function isValidPlay(card) {
     let currentCard = gameState.getTopDiscard();
     
-    // Para cartas WILD +4, verificar que no tenga cartas del color actual
     if (card.type === "wildDrawFour") {
         const player = gameState.getCurrentPlayer();
-        // Verificar si la CPU tiene cartas del color actual
         for (let c of player.cards) {
             if (c.color === gameState.currentColor) {
-                return false; // No juega WILD +4 si tiene cartas del color actual
+                return false;
             }
         }
-        return true; // Solo juega WILD +4 si no tiene cartas del color actual
+        return true;
     }
     
-    // Las cartas wild normales siempre se pueden jugar
     if (card.type === "wild") {
         return true;
     }
@@ -354,9 +347,7 @@ function showVictoryModal(winnerName) {
 
 function drawCard(playerIndex) {
     let player = gameState.players[playerIndex];
-    // Si el mazo está vacío, recarga desde el descarte
     if (gameState.deck.length === 0 && gameState.discardPile.length > 1) {
-        // Toma todas menos la última carta del descarte
         const lastDiscard = gameState.discardPile.pop();
         gameState.deck = gameState.discardPile;
         shuffle(gameState.deck);
@@ -430,12 +421,10 @@ function renderOpponentHands() {
         area.innerHTML = "";
         const cpu = gameState.players[cpuIdx];
         if (!cpu) continue;
-        // Nombre del CPU
         const nameDiv = document.createElement("div");
         nameDiv.className = "player-info";
         nameDiv.textContent = cpu.name;
         area.appendChild(nameDiv);
-        // Mano del CPU
         const handDiv = document.createElement("div");
         handDiv.className = "hand";
         for (let j = 0; j < cpu.cards.length; j++) {
@@ -503,7 +492,7 @@ async function cpuTurn() {
     const cpu = gameState.players[gameState.turn];
     
     if (!cpu.isHuman) {
-        await new Promise(resolve => setTimeout(resolve, 2500)); // Espera 2.5 segundos
+        await new Promise(resolve => setTimeout(resolve, 2500));
         let played = false;
         
         for (let j = 0; j < cpu.cards.length; j++) {
